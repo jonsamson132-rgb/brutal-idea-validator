@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Brutal Idea Validator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      background: #0f0f0f;
+      color: white;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #1a1a1a;
+      color: white;
+      border: 1px solid #333;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: crimson;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    h1 {
+      text-align: center;
+      color: crimson;
+    }
+
+    .card {
+      background: #1a1a1a;
+      padding: 20px;
+      margin-top: 20px;
+      border: 1px solid #333;
+    }
+
+    .bar {
+      height: 20px;
+      background: #333;
+      margin-bottom: 10px;
+      position: relative;
+    }
+
+    .fill {
+      height: 100%;
+      width: 0%;
+      background: crimson;
+      transition: width 1s ease;
+    }
+
+    .leaderboard-entry {
+      border-bottom: 1px solid #333;
+      padding: 8px 0;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Brutal Idea Validator</h1>
+
+<input id="target" placeholder="Target User">
+<input id="problem" placeholder="Problem">
+<input id="solution" placeholder="Solution">
+<input id="money" placeholder="How You Make Money">
+
+<button onclick="scoreIdea()">Get Destroyed</button>
+<button onclick="clearBoard()">Clear Leaderboard</button>
+
+<div id="result"></div>
+
+<h2>Leaderboard</h2>
+<div id="leaderboard"></div>
+
+<script>
+function calculateScore(target, problem, solution, money) {
+
+  let competition = 100 - Math.min(problem.length * 0.8, 60);
+  let monetization = money.length * 2;
+  let distribution = target.length * 1.5;
+  let moat = solution.length * 1.2;
+
+  competition = Math.max(10, Math.min(competition, 100));
+  monetization = Math.max(10, Math.min(monetization, 100));
+  distribution = Math.max(10, Math.min(distribution, 100));
+  moat = Math.max(10, Math.min(moat, 100));
+
+  let total = Math.round(
+    (competition * 0.25) +
+    (monetization * 0.25) +
+    (distribution * 0.25) +
+    (moat * 0.25)
+  );
+
+  return {
+    competition: Math.round(competition),
+    monetization: Math.round(monetization),
+    distribution: Math.round(distribution),
+    moat: Math.round(moat),
+    total
+  };
+}
+
+function verdict(score) {
+  if (score >= 85) return "Elite tier. Execution determines everything.";
+  if (score >= 70) return "Strong but vulnerable.";
+  if (score >= 55) return "Average. Needs sharper differentiation.";
+  return "Brutal truth: this is weak.";
+}
+
+function animateBar(id, value) {
+  setTimeout(() => {
+    document.getElementById(id).style.width = value + "%";
+  }, 100);
+}
+
+function scoreIdea() {
+  const target = document.getElementById("target").value;
+  const problem = document.getElementById("problem").value;
+  const solution = document.getElementById("solution").value;
+  const money = document.getElementById("money").value;
+
+  if (!target || !problem || !solution || !money) {
+    alert("Fill everything. No lazy founders.");
+    return;
+  }
+
+  const scores = calculateScore(target, problem, solution, money);
+
+  document.getElementById("result").innerHTML = `
+    <div class="card">
+      <strong>Competition: ${scores.competition}/100</strong>
+      <div class="bar"><div id="compBar" class="fill"></div></div>
+
+      <strong>Monetization: ${scores.monetization}/100</strong>
+      <div class="bar"><div id="monBar" class="fill"></div></div>
+
+      <strong>Distribution: ${scores.distribution}/100</strong>
+      <div class="bar"><div id="distBar" class="fill"></div></div>
+
+      <strong>Moat: ${scores.moat}/100</strong>
+      <div class="bar"><div id="moatBar" class="fill"></div></div>
+
+      <hr>
+      <h2>Total: ${scores.total}/100</h2>
+      <p><strong>Verdict:</strong> ${verdict(scores.total)}</p>
+    </div>
+  `;
+
+  animateBar("compBar", scores.competition);
+  animateBar("monBar", scores.monetization);
+  animateBar("distBar", scores.distribution);
+  animateBar("moatBar", scores.moat);
+
+  saveToLeaderboard(target, scores.total);
+  loadLeaderboard();
+}
+
+function saveToLeaderboard(target, total) {
+  let board = JSON.parse(localStorage.getItem("leaderboard")) || [];
+  board.push({ target, total });
+  board.sort((a, b) => b.total - a.total);
+  localStorage.setItem("leaderboard", JSON.stringify(board.slice(0, 10)));
+}
+
+function loadLeaderboard() {
+  let board = JSON.parse(localStorage.getItem("leaderboard")) || [];
+  let html = "";
+
+  board.forEach((entry, index) => {
+    html += `
+      <div class="leaderboard-entry">
+        #${index + 1} — ${entry.target} — <strong>${entry.total}/100</strong>
+      </div>
+    `;
+  });
+
+  document.getElementById("leaderboard").innerHTML = html;
+}
+
+function clearBoard() {
+  localStorage.removeItem("leaderboard");
+  loadLeaderboard();
+}
+
+loadLeaderboard();
+</script>
+
+</body>
+</html>
